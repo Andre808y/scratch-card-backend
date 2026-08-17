@@ -27,7 +27,9 @@ class Prize(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     prize_pool_id: Mapped[str] = mapped_column(ForeignKey("prize_pools.id"))
     code: Mapped[str | None] = mapped_column(String(64), unique=True, default=None)
-    discount_value: Mapped[str] = mapped_column(String(32))
+    # 255, а не 32 — поле хранит не только "10%", но и свободный текст физических призов
+    # ("Зарядный блок в подарок при покупке электроники" и т. п., см. data-model.md).
+    discount_value: Mapped[str] = mapped_column(String(255))
     status: Mapped[PrizeStatus] = mapped_column(
         Enum(PrizeStatus), default=PrizeStatus.AVAILABLE_IN_POOL
     )
