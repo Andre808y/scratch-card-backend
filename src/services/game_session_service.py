@@ -11,7 +11,7 @@ from src.config import settings
 from src.logging_config import log_event
 from src.models.game_session import GameSession, SessionOutcome
 from src.models.player import Player
-from src.models.prize import PrizeStatus
+from src.models.prize import Prize, PrizeStatus
 from src.models.prize_pool import PrizePool
 from src.services.eligibility_service import NotEligibleError, get_active_pending_session
 from src.services.prize_selection import select_prize
@@ -78,14 +78,25 @@ class GameSessionService:
 
             pool = self._get_active_pool(now)
             if pool is not None:
-                prize = select_prize(pool, self.rng)
-                if prize is not None:
-                    prize.status = PrizeStatus.ISSUED
-                    prize.code = generate_code()
-                    prize.issued_at = now
-                    prize.expires_at = now + timedelta(days=PRIZE_VALIDITY_DAYS)
-                    prize.issued_to_session_id = session.id
-                    session.prize_id = prize.id
+                template = select_prize(pool, self.rng)
+                if template is not None:
+                    # Записи со status=available_in_pool — постоянные шаблоны (тип приза + вес);
+                    # они НЕ расходуются и не помечаются как issued. Каждый выигрыш создаёт
+                    # отдельную новую запись-инстанс с собственным кодом — вероятность приза
+                    # задаётся напрямую весом шаблона и не зависит от остатка/количества.
+                    issued = Prize(
+                        prize_pool_id=template.prize_pool_id,
+                        discount_value=template.discount_value,
+                        status=PrizeStatus.ISSUED,
+                        weight=0.0,
+                        code=generate_code(),
+                        issued_at=now,
+                        expires_at=now + timedelta(days=PRIZE_VALIDITY_DAYS),
+                        issued_to_session_id=session.id,
+                    )
+                    self.db.add(issued)
+                    self.db.flush()
+                    session.prize_id = issued.id
 
             # Коммит (не только flush) внутри лока — чтобы результат стал видим для следующего
             # потока до того, как он войдёт в критическую секцию (иначе внешний commit в
