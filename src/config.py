@@ -9,6 +9,7 @@ class Settings:
     bot_token: str
     database_url: str
     mini_app_url: str
+    frontend_origin: str
     play_cooldown_hours: int = 24
 
 
@@ -16,11 +17,16 @@ def load_settings() -> Settings:
     bot_token = os.environ.get("BOT_TOKEN", "")
     database_url = os.environ.get("DATABASE_URL", "sqlite:///./promo_game.db")
     mini_app_url = os.environ.get("MINI_APP_URL", "")
+    # Origin статического хостинга фронтенда (например, https://<user>.github.io) — нужен,
+    # чтобы разрешить CORS-запросы из браузера, когда frontend и backend на разных доменах
+    # (см. src/api/app.py). Локальная разработка (localhost/127.0.0.1) разрешена всегда.
+    frontend_origin = os.environ.get("FRONTEND_ORIGIN", "")
     cooldown_hours = int(os.environ.get("PLAY_COOLDOWN_HOURS", "24"))
     return Settings(
         bot_token=bot_token,
         database_url=database_url,
         mini_app_url=mini_app_url,
+        frontend_origin=frontend_origin,
         play_cooldown_hours=cooldown_hours,
     )
 
