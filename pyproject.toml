@@ -9,6 +9,11 @@ dependencies = [
     "uvicorn[standard]>=0.29",
     "sqlalchemy>=2.0",
     "pydantic>=2.6",
+    # Sync-драйвер PostgreSQL — наш SQLAlchemy-слой синхронный (Session, не AsyncSession).
+    # Используется, только когда DATABASE_URL указывает на postgresql://; для sqlite:// не
+    # требуется (SQLite-поддержка встроена в stdlib). Выбор БД определяется исключительно
+    # DATABASE_URL, без хардкода — см. src/db/session.py.
+    "psycopg2-binary>=2.9",
 ]
 
 [project.optional-dependencies]
