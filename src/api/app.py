@@ -6,7 +6,6 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.api.routes.debug import router as debug_router
 from src.api.routes.game import router as game_router
 from src.config import settings
 from src.db.init_db import init_db
@@ -25,7 +24,6 @@ def create_app() -> FastAPI:
     configure_logging()
     app = FastAPI(title="Electronics Store Promo Game API", lifespan=_lifespan)
     app.include_router(game_router)
-    app.include_router(debug_router)  # TODO(debug): временный, см. routes/debug.py
 
     # localhost/127.0.0.1 — всегда (локальная разработка, frontend и backend на разных портах).
     # settings.frontend_origin (FRONTEND_ORIGIN) — прод-домен статического хостинга фронтенда,
