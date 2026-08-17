@@ -53,13 +53,19 @@ def validate_init_data(init_data: str, bot_token: str) -> int:
 
 
 async def get_authenticated_player(authorization: str = Header(default="")) -> AuthenticatedPlayer:
-    """FastAPI-зависимость: требует заголовок `Authorization: tma <initData>`."""
-    if not authorization.startswith("tma "):
+    """FastAPI-зависимость: требует заголовок `Authorization: tma <initData>`.
+
+    Разбор через partition(), а не жёсткое сравнение с префиксом "tma " — HTTP-инфраструктура
+    (прокси, ASGI-сервер) вправе обрезать конечный пробел у значения заголовка (RFC 7230, OWS),
+    из-за чего "tma " с пустым initData на проводе превращается в "tma" без пробела и ломает
+    сравнение через startswith("tma ").
+    """
+    scheme, _, init_data = authorization.partition(" ")
+    if scheme.lower() != "tma" or not init_data:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="missing tma authorization"
         )
 
-    init_data = authorization[len("tma ") :]
     try:
         telegram_id = validate_init_data(init_data, settings.bot_token)
     except ValueError as exc:
